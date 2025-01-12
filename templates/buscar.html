@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Cotizaciones</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-12 rounded-lg mb-8 text-center">
+            <a href="/" class="inline-block bg-white bg-opacity-20 text-white px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-opacity-30 mb-4">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <h2 class="text-2xl font-bold">Búsqueda de Cotizaciones</h2>
+        </div>
+
+        <div class="bg-white p-8 rounded-lg shadow-md mb-8">
+            <div class="relative mb-4">
+                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                <input type="text" class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-300 ease-in-out focus:outline-none focus:border-blue-500" placeholder="Buscar por nombre de cliente o número de cotización..." onkeyup="realizarBusqueda(this.value)">
+            </div>
+
+            <div class="flex flex-wrap gap-4 mb-4">
+                <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200 active">
+                    <input type="radio" name="tipo" value="todos" class="hidden">
+                    <i class="fas fa-list"></i>
+                    Todos
+                </label>
+                <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200">
+                    <input type="radio" name="tipo" value="empresa" class="hidden">
+                    <i class="fas fa-building"></i>
+                    Empresariales
+                </label>
+                <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200">
+                    <input type="radio" name="tipo" value="natural" class="hidden">
+                    <i class="fas fa-user"></i>
+                    Personales
+                </label>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-700 font-semibold">
+                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">N° Cotización</th>
+                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Fecha</th>
+                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Cliente</th>
+                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Tipo</th>
+                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Total</th>
+                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="resultados">
+                    <!-- Los resultados se cargarán aquí dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Manejar los filtros
+        document.querySelectorAll('.filter-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.filter-option').forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+                realizarBusqueda(document.querySelector('.search-input').value);
+            });
+        });
+
+        function realizarBusqueda(query) {
+            if (query.length < 2 && query.length > 0) return;
+
+            const tipo = document.querySelector('input[name="tipo"]:checked').value;
+            
+            fetch(`/buscar_ajax?query=${encodeURIComponent(query)}&tipo=${tipo}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('resultados');
+                    tbody.innerHTML = '';
+
+                    if (data.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                                    <i class="fas fa-search text-2xl mb-2"></i>
+                                    <p>No se encontraron resultados</p>
+                                </td>
+                            </tr>
+                        `;
+                        return;
+                    }
+
+                    data.forEach(cotizacion => {
+                        const row = document.createElement('tr');
+                        row.classList.add('transition-all', 'duration-300', 'ease-in-out', 'hover:bg-gray-100');
+                        row.innerHTML = `
+                            <td class="px-4 py-3 border-b border-gray-200">#${cotizacion.numero}</td>
+                            <td class="px-4 py-3 border-b border-gray-200">${cotizacion.fecha}</td>
+                            <td class="px-4 py-3 border-b border-gray-200">${cotizacion.nombre}</td>
+                            <td class="px-4 py-3 border-b border-gray-200">
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold ${cotizacion.tipo === 'empresa' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${cotizacion.tipo === 'empresa' ? 'Empresarial' : 'Personal'}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 border-b border-gray-200">${cotizacion.total}</td>
+                            <td class="px-4 py-3 border-b border-gray-200">
+                                <div class="flex items-center gap-2">
+                                    <a href="/ver/${cotizacion.numero}" class="bg-blue-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-blue-600">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                    <a href="/reimprimir/${cotizacion.numero}" class="bg-green-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-green-600">
+                                        <i class="fas fa-download"></i> Descargar
+                                    </a>
+                                    <a href="/eliminar/${cotizacion.numero}" class="bg-red-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-red-600" onclick="return confirm('¿Estás seguro de eliminar esta cotización?')">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                </div>
+                            </td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                });
+        }
+
+        // Función para ver una cotización
+        function verCotizacion(numero) {
+            // Implementar visualización de cotización
+            console.log('Ver cotización:', numero);
+        }
+
+        // Función para descargar una cotización
+        function descargarCotizacion(numero) {
+            // Implementar descarga de cotización
+            console.log('Descargar cotización:', numero);
+        }
+    </script>
+</body>
+</html>

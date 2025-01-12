@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotización</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1.5cm;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+            position: relative;
+            font-size: 11pt;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .header-left {
+            width: 250px;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .header-logo {
+            width: 280px;
+            height: auto;
+        }
+
+        .header-title {
+            font-size: 35px;
+            letter-spacing: 3px;
+            margin: 0;
+            text-align: right;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.08;
+            width: 70%;
+            z-index: -1;
+        }
+
+        .client-section {
+            margin-top: 15px;
+        }
+
+        .contact-info p, .client-section p {
+            margin: 1px 0;
+            font-size: 11pt;
+        }
+
+        .validity-text {
+            color: red;
+            text-align: center;
+            margin: 15px 0;
+            font-size: 11pt;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        th {
+            padding: 8px;
+            text-align: left;
+            background-color: white;
+            font-weight: bold;
+            border: none;
+        }
+
+        td {
+            padding: 8px;
+            text-align: left;
+            border: none;
+        }
+
+        thead tr {
+            border-bottom: 2px solid black;
+        }
+
+        tbody tr:last-child {
+            border-bottom: 2px solid black;
+        }
+
+        .payment-and-totals {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+        }
+
+        .payment-methods {
+            text-align: left;
+            flex: 1;
+            font-size: 11pt;
+        }
+
+        .payment-methods p {
+            margin: 1px 0;
+        }
+
+        .totals {
+            text-align: right;
+            flex: 1;
+        }
+
+        .totals p {
+            margin: 1px 0;
+            font-size: 11pt;
+        }
+
+        .yappy-logo {
+            width: 25px;
+            height: auto;
+            vertical-align: middle;
+        }
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 100px;
+            padding: 0 30px;
+        }
+
+        .signature-line {
+            width: 180px;
+            border-top: 1px solid black;
+            text-align: center;
+            padding-top: 5px;
+            font-size: 11pt;
+        }
+
+        .terms {
+            margin-top: 15px;
+            font-size: 11pt;
+        }
+
+        .terms ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 5px 0;
+        }
+
+        .terms li {
+            margin-bottom: 2px;
+        }
+
+        .quotation-number {
+            color: blue;
+            font-weight: bold;
+        }
+
+        .client-info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 100px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ url_for('static', filename='watermark.png') }}" alt="Watermark" class="watermark">
+        
+        <div class="header">
+            <div class="header-left">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="VIANG SOLUTION & SERVICE" class="header-logo">
+            </div>
+            <div class="header-right">
+                <h1 class="header-title">C O T I Z A C I Ó N</h1>
+                <p style="margin: 5px 0;">Panamá, {{ fecha }}</p>
+                <p class="quotation-number">N°{{ numero_cotizacion }}</p>
+            </div>
+        </div>
+
+        <p style="margin: 5px 0;">R.U.C: 8-731-875 DV: 74</p>
+
+        <div class="contact-info">
+            <p><strong>Nombre:</strong> Vionel Angulo</p>
+            <p><strong>Telefono:</strong> (+507) 6734-0816</p>
+            <p><strong>Correo:</strong> vionel@viangsolution.com</p>
+            <p><strong>Dirección:</strong> Llano Bonito Juan Dias Calle 18-Local 18-D</p>
+        </div>
+
+        <div class="client-section">
+            <p><strong>PARA:</strong></p>
+            <p><span class="client-info-label">Nombre:</span> {{ nombre }}</p>
+            <p><span class="client-info-label">Ubicación:</span> {{ ubicacion }}</p>
+            <p><span class="client-info-label">Telefono:</span> {{ telefono }}</p>
+        </div>
+
+        <div class="validity-text">
+            "ESTA COTIZACION ES VALIDA DURANTE LOS 15 DIAS DEL MES CORRESPONDIENTE"
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>DESCRIPCION</th>
+                    <th>P/U</th>
+                    <th>UNI.</th>
+                    <th>TOTAL</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for descripcion, pu, unidad, total in items %}
+                <tr>
+                    <td>{{ descripcion }}</td>
+                    <td>${{ "%.2f"|format(pu) }}</td>
+                    <td>{{ unidad }}</td>
+                    <td>${{ "%.2f"|format(total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="payment-and-totals">
+            <div class="payment-methods">
+                <p><strong>METODOS DE PAGO:</strong></p>
+                <p>BANCO GENERAL</p>
+                <p>Nombre: Vionel Angulo</p>
+                <p>Cuenta N°: 04-72-98-21-23-33-0</p>
+                <p>Tipo De Cuenta: AHORRO</p>
+                <p><img src="{{ url_for('static', filename='yappy.png') }}" alt="Yappy" class="yappy-logo"> 6734-0816</p>
+            </div>
+            <div class="totals">
+                <p>SUBTOTAL: ${{ "%.2f"|format(subtotal) }}</p>
+                <p>I.T.B.M.S (7%): ${{ "%.2f"|format(itbms) }}</p>
+                <p>TOTAL: ${{ "%.2f"|format(total) }}</p>
+            </div>
+        </div>
+
+        <div class="signatures">
+            <div class="signature-line">{{ nombre }}</div>
+            <div class="signature-line">VIONEL ANGULO</div>
+        </div>
+
+        <div class="terms">
+            <p><strong>Términos y Condiciones</strong></p>
+            <ul>
+                <li>• El 50% del monto total debe abonarse al aprobar esta cotización.</li>
+                <li>• El saldo restante debe ser pagado al momento de la entrega del producto o finalización del servicio.</li>
+                <li>• No se aceptan devoluciones ni reembolsos una vez aprobado el servicio.</li>
+                <li>• Cualquier cambio en los requerimientos después de aprobada la cotización podrá generar un costo adicional.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
