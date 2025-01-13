@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factura</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1.5cm;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            box-sizing: border-box;
+            position: relative;
+            font-size: 11pt;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .header-logo {
+            width: 250px;
+        }
+
+        .header-title {
+            font-size: 35px;
+            letter-spacing: 3px;
+            margin: 0;
+            text-align: right;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.08;
+            width: 70%;
+            z-index: -1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th, td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .totals {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .totals p {
+            margin: 5px 0;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 10pt;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="{{ url_for('static', filename='watermark.png') }}" alt="Watermark" class="watermark">
+        
+        <div class="header">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="header-logo">
+            <div>
+                <h1 class="header-title">F A C T U R A</h1>
+                <p>N° {{ factura.numero }}</p>
+                <p>Fecha: {{ factura.fecha.strftime('%d/%m/%Y') }}</p>
+            </div>
+        </div>
+
+        <div class="client-info">
+            <p><strong>Cliente:</strong> {{ factura.cotizacion.nombre }}</p>
+            {% if factura.cotizacion.empresa %}
+                <p><strong>Empresa:</strong> {{ factura.cotizacion.empresa }}</p>
+            {% endif %}
+            <p><strong>Dirección:</strong> {{ factura.cotizacion.ubicacion }}</p>
+            <p><strong>Teléfono:</strong> {{ factura.cotizacion.telefono }}</p>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Descripción</th>
+                    <th>P/U</th>
+                    <th>Cantidad</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in factura.cotizacion.get_items() %}
+                <tr>
+                    <td>{{ item.descripcion }}</td>
+                    <td>${{ "%.2f"|format(item.precio_unitario) }}</td>
+                    <td>{{ item.unidades }}</td>
+                    <td>${{ "%.2f"|format(item.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <p><strong>Subtotal:</strong> ${{ "%.2f"|format(factura.subtotal) }}</p>
+            <p><strong>ITBMS (7%):</strong> ${{ "%.2f"|format(factura.itbms) }}</p>
+            <p><strong>Total:</strong> ${{ "%.2f"|format(factura.total) }}</p>
+        </div>
+
+        <div class="terms">
+            <p><strong>Términos y Condiciones</strong></p>
+            <ul>
+                <li>• El pago debe realizarse dentro de los próximos 30 días.</li>
+                <li>• Para pagos mediante transferencia, utilice los siguientes datos bancarios:</li>
+                <li>&nbsp;&nbsp;&nbsp;Banco: BANCO GENERAL</li>
+                <li>&nbsp;&nbsp;&nbsp;Cuenta: 04-72-98-21-23-33-0</li>
+                <li>&nbsp;&nbsp;&nbsp;Titular: Vionel Angulo</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>VIANG SOLUTION & SERVICE - RUC: 8-731-875 DV: 74</p>
+            <p>Llano Bonito Juan Dias Calle 18-Local 18-D</p>
+            <p>Tel: (+507) 6734-0816 - Email: vionel@viangsolution.com</p>
+        </div>
+    </div>
+</body>
+</html>

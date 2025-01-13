@@ -6,54 +6,68 @@
     <title>Sistema de Cotizaciones</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-12 rounded-lg mb-8 text-center">
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-12 rounded-lg mb-8 text-center relative">
             <h1 class="text-3xl font-bold mb-4">Sistema de Cotizaciones</h1>
             <div class="relative max-w-md mx-auto">
                 <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                 <input type="text" class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-base focus:outline-none focus:border-blue-500" placeholder="Buscar por nombre de cliente o número de cotización..." onkeyup="buscarCotizaciones(this.value)">
             </div>
+            <a href="{{ url_for('index') }}" class="absolute top-4 right-4 bg-white bg-opacity-20 text-white px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-opacity-30">
+                <i class="fas fa-tachometer-alt"></i> Volver al Dashboard
+            </a>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <div class="bg-white p-4 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg">
                 <i class="fas fa-file-invoice text-3xl text-blue-500 mb-2"></i>
-                <p class="text-2xl font-semibold text-gray-800">{{ total_cotizaciones }}</p>
+                <p class="text-2xl font-semibold text-gray-800" id="total_cotizaciones">0</p>
                 <p class="text-gray-500">Cotizaciones Totales</p>
             </div>
             <div class="bg-white p-4 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg">
                 <i class="fas fa-building text-3xl text-blue-500 mb-2"></i>
-                <p class="text-2xl font-semibold text-gray-800">{{ cotizaciones_empresa }}</p>
+                <p class="text-2xl font-semibold text-gray-800" id="cotizaciones_empresa">0</p>
                 <p class="text-gray-500">Cotizaciones Empresariales</p>
             </div>
             <div class="bg-white p-4 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg">
                 <i class="fas fa-user text-3xl text-blue-500 mb-2"></i>
-                <p class="text-2xl font-semibold text-gray-800">{{ cotizaciones_personal }}</p>
+                <p class="text-2xl font-semibold text-gray-800" id="cotizaciones_personal">0</p>
                 <p class="text-gray-500">Cotizaciones Personales</p>
             </div>
             <div class="bg-white p-4 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg">
                 <i class="fas fa-calendar-alt text-3xl text-blue-500 mb-2"></i>
-                <p class="text-2xl font-semibold text-gray-800">{{ cotizaciones_mes }}</p>
+                <p class="text-2xl font-semibold text-gray-800" id="cotizaciones_mes">0</p>
                 <p class="text-gray-500">Cotizaciones este mes</p>
+            </div>
+            <div class="bg-white p-4 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg">
+                <i class="fas fa-check text-3xl text-green-500 mb-2"></i>
+                <p class="text-2xl font-semibold text-gray-800" id="cotizaciones_aprobadas">0</p>
+                <p class="text-gray-500">Cotizaciones Aprobadas</p>
+            </div>
+            <div class="bg-white p-4 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg">
+                <i class="fas fa-times text-3xl text-red-500 mb-2"></i>
+                <p class="text-2xl font-semibold text-gray-800" id="cotizaciones_rechazadas">0</p>
+                <p class="text-gray-500">Cotizaciones Rechazadas</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
-            <a href="/formulario_empresa" class="bg-white p-6 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
+            <a href="{{ url_for('formulario_empresa') }}" class="bg-white p-6 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
                 <i class="fas fa-building text-4xl text-blue-500 mb-4"></i>
                 <h3 class="text-xl font-semibold mb-2">Cotización Empresarial</h3>
                 <p class="text-gray-500">Crear una nueva cotización para clientes empresariales</p>
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
             </a>
-            <a href="/formulario_natural" class="bg-white p-6 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
+            <a href="{{ url_for('formulario_natural') }}" class="bg-white p-6 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
                 <i class="fas fa-user text-4xl text-blue-500 mb-4"></i>
                 <h3 class="text-xl font-semibold mb-2">Cotización Personal</h3>
                 <p class="text-gray-500">Crear una nueva cotización para clientes particulares</p>
                 <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600"></div>
             </a>
-            <a href="/buscar" class="bg-white p-6 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
+            <a href="{{ url_for('buscar') }}" class="bg-white p-6 rounded-md shadow-md text-center transition-all duration-300 ease-in-out hover:shadow-lg relative overflow-hidden">
                 <i class="fas fa-search text-4xl text-blue-500 mb-4"></i>
                 <h3 class="text-xl font-semibold mb-2">Búsqueda Avanzada</h3>
                 <p class="text-gray-500">Buscar y gestionar cotizaciones existentes</p>
@@ -62,6 +76,17 @@
         </div>
 
         <div id="searchResults" class="mt-8"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+            <div class="bg-white p-6 rounded-md shadow-md">
+                <h3 class="text-xl font-semibold mb-4">Cotizaciones Aprobadas</h3>
+                <canvas id="aprobadasChart"></canvas>
+            </div>
+            <div class="bg-white p-6 rounded-md shadow-md">
+                <h3 class="text-xl font-semibold mb-4">Cotizaciones Rechazadas</h3>
+                <canvas id="rechazadasChart"></canvas>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -87,6 +112,53 @@
                     }
                 });
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total_cotizaciones').textContent = data.total_cotizaciones;
+                    document.getElementById('cotizaciones_empresa').textContent = data.cotizaciones_empresa;
+                    document.getElementById('cotizaciones_personal').textContent = data.cotizaciones_personal;
+                    document.getElementById('cotizaciones_mes').textContent = data.cotizaciones_mes;
+                    document.getElementById('cotizaciones_aprobadas').textContent = data.cotizaciones_aprobadas;
+                    document.getElementById('cotizaciones_rechazadas').textContent = data.cotizaciones_rechazadas;
+
+                    // Crear gráficos
+                    const aprobadasCtx = document.getElementById('aprobadasChart').getContext('2d');
+                    const rechazadasCtx = document.getElementById('rechazadasChart').getContext('2d');
+
+                    new Chart(aprobadasCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Aprobadas'],
+                            datasets: [{
+                                data: [data.cotizaciones_aprobadas],
+                                backgroundColor: ['#10B981'],
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                        }
+                    });
+
+                    new Chart(rechazadasCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Rechazadas'],
+                            datasets: [{
+                                data: [data.cotizaciones_rechazadas],
+                                backgroundColor: ['#EF4444'],
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                        }
+                    });
+                });
+        });
     </script>
 </body>
 </html>

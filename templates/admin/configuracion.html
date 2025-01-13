@@ -1,0 +1,139 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}Configuración{% endblock %}
+
+{% block header %}Configuración del Sistema{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Configuración General -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-semibold mb-4">Configuración General</h2>
+        <form action="{{ url_for('guardar_configuracion') }}" method="POST">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Nombre de la Empresa
+                </label>
+                <input type="text" name="nombre_empresa" value="{{ config.nombre_empresa }}" 
+                    class="w-full px-3 py-2 border rounded-lg">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    RUC
+                </label>
+                <input type="text" name="ruc" value="{{ config.ruc }}"
+                    class="w-full px-3 py-2 border rounded-lg">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Dirección
+                </label>
+                <input type="text" name="direccion" value="{{ config.direccion }}"
+                    class="w-full px-3 py-2 border rounded-lg">
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">
+                    Teléfono
+                </label>
+                <input type="text" name="telefono" value="{{ config.telefono }}"
+                    class="w-full px-3 py-2 border rounded-lg">
+            </div>
+
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                Guardar Cambios
+            </button>
+        </form>
+    </div>
+
+    <!-- Configuración de Backup -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-lg font-semibold mb-4">Backup del Sistema</h2>
+        <div class="mb-6">
+            <p class="text-gray-600 mb-4">Último backup: 
+                {% if ultimo_backup %}
+                    {{ ultimo_backup.fecha.strftime('%d/%m/%Y %H:%M') }}
+                {% else %}
+                    Nunca
+                {% endif %}
+            </p>
+            <button onclick="crearBackup()" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                Crear Nuevo Backup
+            </button>
+        </div>
+
+        <h3 class="text-md font-semibold mb-2">Backups Anteriores</h3>
+        <div class="max-h-64 overflow-y-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left">
+                        <th class="pb-2">Fecha</th>
+                        <th class="pb-2">Archivo</th>
+                        <th class="pb-2">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for backup in backups %}
+                    <tr class="border-t">
+                        <td class="py-2">{{ backup.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td class="py-2">{{ backup.archivo }}</td>
+                        <td class="py-2">
+                            <button onclick="descargarBackup('{{ backup.archivo }}')" 
+                                class="text-blue-500 hover:text-blue-700 mr-2">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button onclick="eliminarBackup('{{ backup.id }}')"
+                                class="text-red-500 hover:text-red-700">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function crearBackup() {
+    if(confirm('¿Está seguro de crear un nuevo backup?')) {
+        fetch('/admin/crear_backup', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                window.location.reload();
+            } else {
+                alert('Error al crear el backup: ' + data.error);
+            }
+        });
+    }
+}
+
+function descargarBackup(archivo) {
+    window.location.href = '/admin/descargar_backup/' + archivo;
+}
+
+function eliminarBackup(id) {
+    if(confirm('¿Está seguro de eliminar este backup?')) {
+        fetch('/admin/eliminar_backup/' + id, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                window.location.reload();
+            } else {
+                alert('Error al eliminar el backup: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

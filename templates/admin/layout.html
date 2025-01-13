@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Administración{% endblock %} - Sistema de Cotizaciones</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 bg-blue-800">
+        <div class="flex flex-col h-full">
+            <!-- Logo -->
+            <div class="flex items-center justify-center h-16 bg-blue-900">
+                <span class="text-white text-xl font-bold">Admin Panel</span>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 py-4">
+                <a href="{{ url_for('dashboard') }}" class="flex items-center px-4 py-2 text-gray-100 hover:bg-blue-700 rounded-lg mb-1">
+                    <i class="fas fa-chart-line mr-3"></i>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('admin_usuarios') }}" class="flex items-center px-4 py-2 text-gray-100 hover:bg-blue-700 rounded-lg mb-1">
+                    <i class="fas fa-users mr-3"></i>
+                    Usuarios
+                </a>
+                <a href="{{ url_for('listar_cotizaciones') }}" class="flex items-center px-4 py-2 text-gray-100 hover:bg-blue-700 rounded-lg mb-1">
+                    <i class="fas fa-file-invoice mr-3"></i>
+                    Cotizaciones
+                </a>
+                <a href="{{ url_for('listar_facturas') }}" class="flex items-center px-4 py-2 text-gray-100 hover:bg-blue-700 rounded-lg mb-1">
+                    <i class="fas fa-file-invoice-dollar mr-3"></i>
+                    Facturas
+                </a>
+                <a href="{{ url_for('reportes') }}" class="flex items-center px-4 py-2 text-gray-100 hover:bg-blue-700 rounded-lg mb-1">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    Reportes
+                </a>
+                <a href="{{ url_for('configuracion') }}" class="flex items-center px-4 py-2 text-gray-100 hover:bg-blue-700 rounded-lg">
+                    <i class="fas fa-cog mr-3"></i>
+                    Configuración
+                </a>
+            </nav>
+            
+            <!-- User Info -->
+            <div class="p-4 bg-blue-900">
+                <div class="flex items-center">
+                    <img src="/api/placeholder/32/32" alt="User" class="w-8 h-8 rounded-full mr-3">
+                    <div>
+                        <p class="text-white text-sm">{{ current_user.nombre_completo }}</p>
+                        <a href="{{ url_for('logout') }}" class="text-gray-300 text-xs hover:text-white">Cerrar Sesión</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="ml-64 p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800">{% block header %}{% endblock %}</h1>
+            <div class="flex items-center">
+                <!-- Notifications -->
+                <div class="relative mr-4">
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-bell"></i>
+                        <span class="absolute top-0 right-0 -mt-1 -mr-1 px-2 py-1 text-xs text-white bg-red-500 rounded-full">3</span>
+                    </button>
+                </div>
+                <!-- User Dropdown -->
+                <div class="relative">
+                    <button class="flex items-center text-gray-500 hover:text-gray-700">
+                        <img src="/api/placeholder/32/32" alt="User" class="w-8 h-8 rounded-full mr-2">
+                        <span>{{ current_user.username }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Scripts -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>

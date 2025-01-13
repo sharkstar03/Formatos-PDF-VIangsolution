@@ -184,11 +184,11 @@
 </head>
 <body>
     <div class="container">
-        <img src="{{ url_for('static', filename='watermark.png') }}" alt="Watermark" class="watermark">
+        <img src="{{ url_for('static', filename='watermark.png', _external=True) }}" alt="Watermark" class="watermark">
         
         <div class="header">
             <div class="header-left">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="VIANG SOLUTION & SERVICE" class="header-logo">
+                <img src="{{ url_for('static', filename='logo.png', _external=True) }}" alt="VIANG SOLUTION & SERVICE" class="header-logo">
             </div>
             <div class="header-right">
                 <h1 class="header-title">C O T I Z A C I Ó N</h1>
@@ -245,7 +245,7 @@
                 <p>Nombre: Vionel Angulo</p>
                 <p>Cuenta N°: 04-72-98-21-23-33-0</p>
                 <p>Tipo De Cuenta: AHORRO</p>
-                <p><img src="{{ url_for('static', filename='yappy.png') }}" alt="Yappy" class="yappy-logo"> 6734-0816</p>
+                <p><img src="{{ url_for('static', filename='yappy.png', _external=True) }}" alt="Yappy" class="yappy-logo"> 6734-0816</p>
             </div>
             <div class="totals">
                 <p>SUBTOTAL: ${{ "%.2f"|format(subtotal) }}</p>

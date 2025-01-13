@@ -31,6 +31,18 @@
                     {% endif %}
                     <p><strong>Ubicación:</strong> {{ cotizacion.ubicacion }}</p>
                     <p><strong>Teléfono:</strong> {{ cotizacion.telefono }}</p>
+                    <p><strong>Estado:</strong> 
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold
+                            {% if cotizacion.estado == 'aprobada' %}
+                                bg-green-100 text-green-800
+                            {% elif cotizacion.estado == 'rechazada' %}
+                                bg-red-100 text-red-800
+                            {% else %}
+                                bg-yellow-100 text-yellow-800
+                            {% endif %}">
+                            {{ cotizacion.estado|title }}
+                        </span>
+                    </p>
                 </div>
                 <div>
                     <h2 class="text-xl font-bold mb-4">Totales</h2>

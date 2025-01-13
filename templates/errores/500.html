@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto mt-10 text-center">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h1 class="text-6xl font-bold text-red-500 mb-4">500</h1>
+        <h2 class="text-3xl font-semibold mb-4">Error Interno del Servidor</h2>
+        <p class="text-gray-600 mb-6">Lo sentimos, ha ocurrido un error inesperado. Nuestro equipo ha sido notificado.</p>
+        <div class="flex justify-center space-x-4">
+            <a href="{{ url_for('index') }}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                Volver al Inicio
+            </a>
+            <a href="{{ url_for('reportes') }}" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
+                Ver Reportes
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
