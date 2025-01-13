@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, send_file, redirect, url_for, jsonify, flash, session
+from flask import Flask, render_template, request, send_file, redirect, url_for, jsonify, flash, session, abort
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_migrate import Migrate, upgrade  # Import upgrade function
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from weasyprint import HTML
 import os
@@ -170,6 +170,7 @@ def get_stats():
         total_facturas = Factura.query.count()
         total_ventas = db.session.query(func.sum(Factura.total)).scalar() or 0
         total_clientes = db.session.query(func.count(Factura.cotizacion_id.distinct())).scalar()
+        facturas_pendientes = Factura.query.filter_by(estado='pendiente').count()
         
         return jsonify({
             'total_ventas': float(total_ventas),
@@ -179,9 +180,122 @@ def get_stats():
             'cotizaciones_personal': cotizaciones_personal,
             'cotizaciones_aprobadas': cotizaciones_aprobadas,
             'cotizaciones_rechazadas': cotizaciones_rechazadas,
-            'total_clientes': total_clientes
+            'total_clientes': total_clientes,
+            'facturas_pendientes': facturas_pendientes
         })
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Rutas de facturas
+@app.route('/api/buscar_facturas')
+@login_required
+def buscar_facturas_api():
+    query = request.args.get('query', '').strip()
+    estado = request.args.get('estado', 'todos')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    
+    # Iniciar la consulta base
+    base_query = Factura.query.join(Cotizacion)
+    
+    # Aplicar filtros
+    if query:
+        base_query = base_query.filter(
+            db.or_(
+                Factura.numero.ilike(f'%{query}%'),
+                Cotizacion.nombre.ilike(f'%{query}%')
+            )
+        )
+    
+    if estado != 'todos':
+        base_query = base_query.filter(Factura.estado == estado)
+    
+    if fecha_inicio and fecha_fin:
+        base_query = base_query.filter(
+            Factura.fecha.between(fecha_inicio, fecha_fin)
+        )
+    
+    # Obtener resultados
+    facturas = base_query.order_by(Factura.fecha.desc()).all()
+    
+    # Convertir a formato JSON
+    return jsonify([{
+        'numero': f.numero,
+        'cliente_nombre': f.cotizacion.nombre if f.cotizacion else 'N/A',
+        'fecha': f.fecha.strftime('%d/%m/%Y'),
+        'total': float(f.total),
+        'estado': f.estado,
+        'cotizacion_numero': f.cotizacion.numero if f.cotizacion else None
+    } for f in facturas])
+
+@app.route('/facturas')
+@login_required
+def facturas():
+    """Lista todas las facturas"""
+    facturas = Factura.query.order_by(Factura.fecha.desc()).all()
+    return render_template('facturas.html', facturas=facturas)
+
+@app.route('/ver_factura/<numero>')
+@login_required
+def ver_factura(numero):
+    """Ver detalles de una factura específica"""
+    factura = Factura.query.filter_by(numero=numero).first_or_404()
+    return render_template('ver_factura.html', factura=factura)
+
+@app.route('/descargar_factura/<numero>')
+@login_required
+def descargar_factura(numero):
+    """Descargar una factura en formato PDF"""
+    factura = Factura.query.filter_by(numero=numero).first_or_404()
+    
+    # Renderizar el template HTML
+    html = render_template('plantilla_factura_pdf.html', factura=factura)
+    
+    # Convertir HTML a PDF
+    pdf = HTML(string=html).write_pdf()
+    
+    # Preparar el archivo para descarga
+    pdf_buffer = BytesIO(pdf)
+    pdf_buffer.seek(0)
+    
+    return send_file(
+        pdf_buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f'Factura_{factura.numero}.pdf'
+    )
+
+@app.route('/marcar_pagada/<numero>', methods=['POST'])
+@login_required
+def marcar_factura_pagada(numero):
+    """Marcar una factura como pagada"""
+    try:
+        factura = Factura.query.filter_by(numero=numero).first_or_404()
+        
+        if factura.estado == 'anulada':
+            return jsonify({'error': 'No se puede marcar como pagada una factura anulada'}), 400
+            
+        if factura.estado == 'pagada':
+            return jsonify({'error': 'La factura ya está marcada como pagada'}), 400
+        
+        factura.estado = 'pagada'
+        factura.fecha_pago = datetime.utcnow()
+        factura.modificado_por = current_user.username
+        
+        db.session.commit()
+        
+        registrar_actividad(
+            'marcar_pagada',
+            f'Factura {numero} marcada como pagada por {current_user.username}'
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': 'Factura marcada como pagada exitosamente'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 # Rutas de notificaciones
@@ -214,276 +328,42 @@ def marcar_notificacion_leida(id):
     db.session.commit()
     return jsonify({'success': True})
 
-@app.route('/exportar_excel')
+# Rutas de cotizaciones
+@app.route('/select')
 @login_required
-def exportar_excel():
-    """Exporta datos a Excel"""
-    tipo = request.args.get('tipo', 'cotizaciones')
-    fecha_inicio = request.args.get('fecha_inicio')
-    fecha_fin = request.args.get('fecha_fin')
-    
-    if tipo == 'cotizaciones':
-        query = Cotizacion.query
-    else:
-        query = Factura.query
-    
-    if fecha_inicio and fecha_fin:
-        query = query.filter(
-            Cotizacion.fecha.between(fecha_inicio, fecha_fin)
-        )
-    
-    data = [item.to_dict() for item in query.all()]
-    df = pd.DataFrame(data)
-    
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False)
-    
-    output.seek(0)
-    
-    return send_file(
-        output,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name=f'reporte_{tipo}_{datetime.now().strftime("%Y%m%d")}.xlsx'
-    )
+def cotizaciones():
+    return render_template('select_type.html')
 
-# Rutas de backup
-@app.route('/crear_backup')
-@admin_required
-def crear_backup():
-    """Crea un backup de la base de datos"""
-    try:
-        fecha = datetime.now().strftime('%Y%m%d_%H%M%S')
-        nombre_archivo = f'backup_{fecha}.db'
-        ruta_backup = os.path.join(app.config['BACKUP_FOLDER'], nombre_archivo)
-        
-        # Copiar la base de datos
-        shutil.copy2('cotizaciones.db', ruta_backup)
-        
-        # Registrar el backup
-        backup = Backup(
-            archivo=nombre_archivo,
-            tipo='completo',
-            estado='exitoso',
-            usuario_id=current_user.id
-        )
-        db.session.add(backup)
-        db.session.commit()
-        
-        registrar_actividad('backup', f'Backup creado: {nombre_archivo}')
-        return jsonify({
-            'success': True,
-            'mensaje': 'Backup creado exitosamente',
-            'archivo': nombre_archivo
-        })
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Aquí va el nuevo código de administración de usuarios
-@app.route('/admin/usuarios')
-@admin_required
-def admin_usuarios():
-    usuarios = Usuario.query.all()
-    return render_template('admin/usuarios.html', usuarios=usuarios, current_user=current_user)
-
-@app.route('/api/usuarios', methods=['POST'])
-@admin_required
-def crear_usuario():
-    try:
-        data = request.form
-        
-        # Verificar si el usuario ya existe
-        if Usuario.query.filter_by(username=data['username']).first():
-            return jsonify({'error': 'El nombre de usuario ya existe'}), 400
-            
-            return jsonify({'error': 'El email ya está registrado'}), 400
-        
-        nuevo_usuario = Usuario(
-            username=data['username'],
-            email=data['email'],
-            nombre_completo=data['nombre_completo'],
-            rol=data['rol'],
-            activo=True
-        )
-        nuevo_usuario.set_password(data['password'])
-        
-        db.session.add(nuevo_usuario)
-        db.session.commit()
-        
-        registrar_actividad(
-            'crear_usuario',
-            f'Usuario {current_user.username} creó el usuario {nuevo_usuario.username}'
-        )
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/usuarios/<int:id>', methods=['GET'])
-@admin_required
-def obtener_usuario(id):
-    usuario = Usuario.query.get_or_404(id)
-    return jsonify(usuario.to_dict())
-
-@app.route('/api/usuarios/<int:id>/toggle_estado', methods=['POST'])
-@admin_required
-def toggle_estado_usuario(id):
-    try:
-        usuario = Usuario.query.get_or_404(id)
-        if usuario.id == current_user.id:
-            return jsonify({'error': 'No puedes desactivar tu propio usuario'}), 400
-            
-        usuario.activo = not usuario.activo
-        db.session.commit()
-        
-        registrar_actividad(
-            'toggle_usuario',
-            f'Usuario {current_user.username} cambió el estado de {usuario.username} a {"activo" if usuario.activo else "inactivo"}'
-        )
-        
-        return jsonify({'success': True})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/usuarios/<int:id>/reset_password', methods=['POST'])
-@admin_required
-def reset_password_usuario(id):
-    try:
-        usuario = Usuario.query.get_or_404(id)
-        nueva_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-        usuario.set_password(nueva_password)
-        db.session.commit()
-        
-        registrar_actividad(
-            'reset_password',
-            f'Usuario {current_user.username} restableció la contraseña de {usuario.username}'
-        )
-        
-        return jsonify({
-            'success': True,
-            'password': nueva_password
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-    
-@app.route('/admin/configuracion')
-@admin_required
-def configuracion():
-    config = {
-        'nombre_empresa': 'VIANG SOLUTION & SERVICE',
-        'ruc': '8-731-875 DV: 74',
-        'direccion': 'Llano Bonito Juan Dias Calle 18-Local 18-D',
-        'telefono': '(+507) 6734-0816'
-    }
-    backups = Backup.query.order_by(Backup.fecha.desc()).all()
-    return render_template('admin/configuracion.html', config=config, backups=backups)
-            
-@app.route('/api/stats/por_mes')
+@app.route('/nueva_cotizacion')
 @login_required
-def generar_reporte_por_mes():
-    meses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # Definir la lista de meses
-    
-    labels = []
-    cotizaciones = []
-    facturas = []
-    
-    for mes in meses:
-        fecha = datetime(datetime.now().year, mes, 1)
-        
-        total_cotizaciones = Cotizacion.query\
-            .filter(extract('month', Cotizacion.fecha) == fecha.month,
-                   extract('year', Cotizacion.fecha) == fecha.year)\
-            .count()
-            
-        total_facturas = Factura.query\
-            .filter(extract('month', Factura.fecha) == fecha.month,
-                   extract('year', Factura.fecha) == fecha.year)\
-            .count()
-        
-        labels.append(mes)
-        cotizaciones.append(total_cotizaciones)
-        facturas.append(total_facturas)
-    
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Crear DataFrame con los datos
-        df = pd.DataFrame({
-            'Mes': labels,
-            'Cotizaciones': cotizaciones,
-            'Facturas': facturas
-        })
-        
-        # Escribir DataFrame en una hoja de cálculo
-        df.to_excel(writer, sheet_name='Reporte por Mes', index=False)
-        
-        # Ajustar ancho de columnas
-        worksheet = writer.sheets['Reporte por Mes']
-        worksheet.set_column('A:A', 10)
-        worksheet.set_column('B:C', 15)
-    
-    output.seek(0)
-    
-    return send_file(
-        output,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name=f'reporte_por_mes_{datetime.now().strftime("%Y%m%d")}.xlsx'
-    )
+def nueva_cotizacion():
+    return render_template('nueva_cotizacion.html')
 
-@app.route('/generar_reporte_ventas')
+@app.route('/select_type')
 @login_required
-def generar_reporte_ventas():
-    fecha_inicio = request.args.get('fecha_inicio')
-    fecha_fin = request.args.get('fecha_fin')
-    
-    query = Factura.query.order_by(Factura.fecha.desc())
-    
-    if fecha_inicio and fecha_fin:
-        query = query.filter(Factura.fecha.between(fecha_inicio, fecha_fin))
-    
-    facturas = query.all()
-    
-    # Crear Excel
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        # Convertir a dataframe
-        data = [{
-            'Fecha': f.fecha,
-            'Número': f.numero,
-            'Cliente': f.cotizacion.nombre,
-            'Subtotal': f.subtotal,
-            'ITBMS': f.itbms,
-            'Total': f.total,
-            'Estado': f.estado
-        } for f in facturas]
-        
-        df = pd.DataFrame(data)
-        df.to_excel(writer, sheet_name='Ventas', index=False)
-        
-        # Generar hoja de resumen
-        resumen = pd.DataFrame({
-            'Métrica': ['Total Facturas', 'Total Ventas', 'Promedio por Factura'],
-            'Valor': [
-                len(facturas), 
-                df['Total'].sum(), 
-                df['Total'].mean()
-            ]
-        })
-        resumen.to_excel(writer, sheet_name='Resumen', index=False)
-    
-    output.seek(0)
-    
-    return send_file(
-        output,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        as_attachment=True,
-        download_name=f'reporte_ventas_{datetime.now().strftime("%Y%m%d")}.xlsx'
-    )
+def select_type():
+    return render_template('select_type.html')
+
+@app.route('/formulario_empresa')
+@login_required
+def formulario_empresa():
+    return render_template('formulario_empresa.html')
+
+@app.route('/formulario_natural')
+@login_required
+def formulario_natural():
+    return render_template('formulario_natural.html')
+
+@app.route('/buscar')
+@login_required
+def buscar():
+    return render_template('buscar.html')
+
+@app.route('/ver/<numero>')
+@login_required
+def ver_cotizacion(numero):
+    cotizacion = Cotizacion.query.filter_by(numero=numero).first_or_404()
+    return render_template('ver_cotizacion.html', cotizacion=cotizacion)
 
 @app.route('/generate-pdf-empresa', methods=['POST'])
 @login_required
@@ -527,8 +407,10 @@ def generate_pdf_empresa():
                            numero_cotizacion=numero_cotizacion)
     
     pdf = HTML(string=html).write_pdf()
-    filename = f"{data['nombre']}_{numero_cotizacion}.pdf"
-    return send_file(BytesIO(pdf), attachment_filename=filename, as_attachment=True)
+    return send_file(BytesIO(pdf), 
+                    mimetype='application/pdf',
+                    as_attachment=True,
+                    download_name=f"{data['nombre']}_{numero_cotizacion}.pdf")
 
 @app.route('/generate-pdf-natural', methods=['POST'])
 @login_required
@@ -570,8 +452,44 @@ def generate_pdf_natural():
                            numero_cotizacion=numero_cotizacion)
     
     pdf = HTML(string=html).write_pdf()
-    filename = f"{data['nombre']}_{numero_cotizacion}.pdf"
-    return send_file(BytesIO(pdf), attachment_filename=filename, as_attachment=True)
+    return send_file(BytesIO(pdf), 
+                    mimetype='application/pdf',
+                    as_attachment=True,
+                    download_name=f"{data['nombre']}_{numero_cotizacion}.pdf")
+
+@app.route('/exportar_excel')
+@login_required
+def exportar_excel():
+    """Exporta datos a Excel"""
+    tipo = request.args.get('tipo', 'cotizaciones')
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    
+    if tipo == 'cotizaciones':
+        query = Cotizacion.query
+    else:
+        query = Factura.query
+    
+    if fecha_inicio and fecha_fin:
+        query = query.filter(
+            Cotizacion.fecha.between(fecha_inicio, fecha_fin)
+        )
+    
+    data = [item.to_dict() for item in query.all()]
+    df = pd.DataFrame(data)
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False)
+    
+    output.seek(0)
+    
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f'reporte_{tipo}_{datetime.now().strftime("%Y%m%d")}.xlsx'
+    )
 
 @app.route('/buscar_ajax')
 @login_required
@@ -591,6 +509,95 @@ def buscar_ajax():
     
     return jsonify([cotizacion.to_dict() for cotizacion in cotizaciones])
 
+@app.route('/generar_reporte_ventas')
+@login_required
+def generar_reporte_ventas():
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
+    
+    query = Factura.query.order_by(Factura.fecha.desc())
+    
+    if fecha_inicio and fecha_fin:
+        query = query.filter(Factura.fecha.between(fecha_inicio, fecha_fin))
+    
+    facturas = query.all()
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Convertir a dataframe
+        data = [{
+            'Fecha': f.fecha,
+            'Número': f.numero,
+            'Cliente': f.cotizacion.nombre,
+            'Subtotal': f.subtotal,
+            'ITBMS': f.itbms,
+            'Total': f.total,
+            'Estado': f.estado
+        } for f in facturas]
+        
+        df = pd.DataFrame(data)
+        df.to_excel(writer, sheet_name='Ventas', index=False)
+        
+        # Generar hoja de resumen
+        resumen = pd.DataFrame({
+            'Métrica': ['Total Facturas', 'Total Ventas', 'Promedio por Factura'],
+            'Valor': [
+                len(facturas), 
+                df['Total'].sum(), 
+                df['Total'].mean()
+            ]
+        })
+        resumen.to_excel(writer, sheet_name='Resumen', index=False)
+    
+    output.seek(0)
+    
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=f'reporte_ventas_{datetime.now().strftime("%Y%m%d")}.xlsx'
+    )
+
+@app.route('/generar_factura/<numero_cotizacion>', methods=['POST'])
+@login_required
+def generar_factura(numero_cotizacion):
+    """Genera una nueva factura a partir de una cotización"""
+    try:
+        cotizacion = Cotizacion.query.filter_by(numero=numero_cotizacion).first_or_404()
+        
+        if cotizacion.estado == 'facturada':
+            return jsonify({'error': 'Esta cotización ya ha sido facturada'}), 400
+
+        # Generar nueva factura
+        numero_factura = get_next_invoice_number()
+        factura = Factura(
+            numero=numero_factura,
+            cotizacion_id=cotizacion.id,
+            subtotal=cotizacion.subtotal,
+            itbms=cotizacion.itbms,
+            total=cotizacion.total,
+            estado='emitida',
+            creado_por='sistema'
+        )
+        
+        # Actualizar estado de la cotización
+        cotizacion.estado = 'facturada'
+        cotizacion.fecha_facturacion = datetime.utcnow()
+        cotizacion.numero_factura = numero_factura
+        
+        db.session.add(factura)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Factura generada exitosamente',
+            'numero_factura': numero_factura
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 # Manejo de Errores
 @app.errorhandler(404)
 def page_not_found(e):
@@ -608,147 +615,19 @@ def shutdown_server():
     func()
 
 @app.route('/shutdown', methods=['POST'])
+@login_required
+@admin_required
 def shutdown():
-    if not current_user.is_authenticated or current_user.rol != 'admin':
-        abort(403)
     shutdown_server()
     return 'Servidor detenido...'
-
-@app.route('/select')
-@login_required
-def cotizaciones():
-    return render_template('select_type.html')
-
-@app.route('/facturas')
-@login_required
-def facturas():
-    facturas = Factura.query.order_by(Factura.fecha.desc()).all()
-    return render_template('facturas.html', facturas=facturas)
-
-@app.route('/nueva_cotizacion')
-@login_required
-def nueva_cotizacion():
-    return render_template('nueva_cotizacion.html')
-
-@app.route('/select_type')
-@login_required
-def select_type():
-    return render_template('select_type.html')
-
-@app.route('/formulario_empresa')
-@login_required
-def formulario_empresa():
-    return render_template('formulario_empresa.html')
-
-@app.route('/formulario_natural')
-@login_required
-def formulario_natural():
-    return render_template('formulario_natural.html')
-
-@app.route('/buscar')
-@login_required
-def buscar():
-    return render_template('buscar.html')
-
-@app.route('/ver/<numero>')
-@login_required
-def ver_cotizacion(numero):
-    cotizacion = Cotizacion.query.filter_by(numero=numero).first_or_404()
-    return render_template('ver_cotizacion.html', cotizacion=cotizacion)
-
-@app.route('/reimprimir/<numero>')
-@login_required
-def reimprimir_cotizacion(numero):
-    cotizacion = Cotizacion.query.filter_by(numero=numero).first_or_404()
-    html = render_template('plantilla_pdf.html', 
-                           nombre=cotizacion.nombre, 
-                           empresa=cotizacion.empresa, 
-                           ubicacion=cotizacion.ubicacion, 
-                           telefono=cotizacion.telefono, 
-                           items=cotizacion.get_items(),
-                           subtotal=cotizacion.subtotal,
-                           itbms=cotizacion.itbms,
-                           total=cotizacion.total,
-                           fecha=cotizacion.fecha.strftime('%d/%m/%Y'),
-                           numero_cotizacion=cotizacion.numero)
-    
-    pdf = HTML(string=html).write_pdf()
-    filename = f"{cotizacion.nombre}_{cotizacion.numero}.pdf"
-    return send_file(BytesIO(pdf), attachment_filename=filename, as_attachment=True)
-
-@app.route('/eliminar/<numero>', methods=['POST'])
-@login_required
-def eliminar_cotizacion(numero):
-    cotizacion = Cotizacion.query.filter_by(numero=numero).first_or_404()
-    db.session.delete(cotizacion)
-    db.session.commit()
-    flash('Cotización eliminada exitosamente.', 'success')
-    return redirect(url_for('buscar'))
-
-@app.route('/aprobar_cotizacion/<numero>', methods=['POST'])
-@login_required
-def aprobar_cotizacion(numero):
-    cotizacion = Cotizacion.query.filter_by(numero=numero).first_or_404()
-    cotizacion.estado = 'aprobada'
-    cotizacion.fecha_aprobacion = datetime.utcnow()
-    db.session.commit()
-    flash('Cotización aprobada exitosamente.', 'success')
-    return redirect(url_for('buscar'))
-
-@app.route('/rechazar_cotizacion/<numero>', methods=['POST'])
-@login_required
-def rechazar_cotizacion(numero):
-    cotizacion = Cotizacion.query.filter_by(numero=numero).first_or_404()
-    cotizacion.estado = 'rechazada'
-    db.session.commit()
-    flash('Cotización rechazada exitosamente.', 'success')
-    return redirect(url_for('buscar'))
-
-@app.route('/generar_factura/<numero>', methods=['POST'])
-@login_required
-def generar_factura(numero):
-    cotizacion = Cotizacion.query.filter_by(numero=numero).first_or_404()
-    if cotizacion.estado != 'aprobada':
-        flash('Solo se pueden generar facturas de cotizaciones aprobadas.', 'error')
-        return redirect(url_for('buscar'))
-    
-    numero_factura = get_next_invoice_number()
-    factura = Factura(
-        numero=numero_factura,
-        cotizacion_id=cotizacion.id,
-        subtotal=cotizacion.subtotal,
-        itbms=cotizacion.itbms,
-        total=cotizacion.total,
-        estado='emitida',
-        creado_por=current_user.username
-    )
-    cotizacion.estado = 'facturada'
-    cotizacion.numero_factura = numero_factura
-    db.session.add(factura)
-    db.session.commit()
-    flash('Factura generada exitosamente.', 'success')
-    return redirect(url_for('facturas'))
-
-@app.route('/ver_factura/<numero>')
-@login_required
-def ver_factura(numero):
-    factura = Factura.query.filter_by(numero=numero).first_or_404()
-    return render_template('ver_factura.html', factura=factura)
-
-@app.route('/descargar_factura/<numero>')
-@login_required
-def descargar_factura(numero):
-    factura = Factura.query.filter_by(numero=numero).first_or_404()
-    html = render_template('plantilla_factura_pdf.html', factura=factura)
-    pdf = HTML(string=html).write_pdf()
-    filename = f"Factura_{factura.numero}.pdf"
-    return send_file(BytesIO(pdf), attachment_filename=filename, as_attachment=True)
 
 # Inicialización de la aplicación
 if __name__ == '__main__':
     # Inicializar base de datos si es necesario
     with app.app_context():
         db.create_all()
-    
+        # Apply migrations
+        upgrade()  # Use the upgrade function
+
     # Configurar modo de depuración
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, port=5000)

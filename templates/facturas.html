@@ -26,6 +26,7 @@
                         <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                         <input 
                             type="text" 
+                            id="search-input"
                             placeholder="Buscar por número de factura o cliente..." 
                             class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
@@ -33,7 +34,7 @@
                 </div>
 
                 <!-- Filtros -->
-                <select class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select id="status-filter" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="all">Todos los estados</option>
                     <option value="pendiente">Pendiente</option>
                     <option value="pagada">Pagada</option>
@@ -43,15 +44,17 @@
                 <!-- Rango de fechas -->
                 <input 
                     type="date" 
+                    id="date-from"
                     class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                 <input 
-                    type="date" 
+                    type="date"
+                    id="date-to"
                     class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
 
                 <!-- Botón de filtrar -->
-                <button class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition-colors">
+                <button onclick="aplicarFiltros()" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition-colors">
                     <i class="fas fa-filter mr-2"></i>Filtrar
                 </button>
             </div>
@@ -67,7 +70,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Total Facturado</p>
-                        <h3 class="text-xl font-bold text-gray-800">$50,000.00</h3>
+                        <h3 class="text-xl font-bold text-gray-800" id="total_facturado">$0.00</h3>
                     </div>
                 </div>
             </div>
@@ -80,7 +83,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Facturas Emitidas</p>
-                        <h3 class="text-xl font-bold text-gray-800">150</h3>
+                        <h3 class="text-xl font-bold text-gray-800" id="facturas_emitidas">0</h3>
                     </div>
                 </div>
             </div>
@@ -93,7 +96,7 @@
                     </div>
                     <div class="ml-4">
                         <p class="text-sm text-gray-500">Facturas Pendientes</p>
-                        <h3 class="text-xl font-bold text-gray-800">25</h3>
+                        <h3 class="text-xl font-bold text-gray-800" id="facturas_pendientes">0</h3>
                     </div>
                 </div>
             </div>
@@ -112,12 +115,12 @@
                         <th class="px-4 py-3 text-left border-b-2 border-gray-200">Acciones</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="facturas-table-body">
                     {% for factura in facturas %}
                     <tr class="border-b border-gray-200 hover:bg-gray-50">
                         <td class="px-4 py-3">#{{ factura.numero }}</td>
-                        <td class="px-4 py-3">{{ factura.cliente }}</td>
-                        <td class="px-4 py-3">{{ factura.fecha }}</td>
+                        <td class="px-4 py-3">{{ factura.cotizacion.nombre }}</td>
+                        <td class="px-4 py-3">{{ factura.fecha.strftime('%d/%m/%Y') }}</td>
                         <td class="px-4 py-3">${{ "%.2f"|format(factura.total) }}</td>
                         <td class="px-4 py-3">
                             <span class="px-2 py-1 rounded-full text-xs font-semibold
@@ -133,13 +136,13 @@
                         </td>
                         <td class="px-4 py-3">
                             <div class="flex items-center gap-2">
-                                <a href="/ver_factura/{{ factura.numero }}" class="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 transition-colors">
+                                <button onclick="verFactura('{{ factura.numero }}')" class="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 transition-colors">
                                     <i class="fas fa-eye"></i> Ver
-                                </a>
-                                <a href="/descargar_factura/{{ factura.numero }}" class="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition-colors">
+                                </button>
+                                <button onclick="descargarFactura('{{ factura.numero }}')" class="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition-colors">
                                     <i class="fas fa-download"></i> Descargar
-                                </a>
-                                {% if factura.estado != 'anulada' %}
+                                </button>
+                                {% if factura.estado != 'anulada' and factura.estado != 'pagada' %}
                                 <button onclick="marcarComoPagada('{{ factura.numero }}')" class="bg-yellow-500 text-white px-2 py-1 rounded-md hover:bg-yellow-600 transition-colors">
                                     <i class="fas fa-check"></i> Marcar Pagada
                                 </button>
@@ -154,26 +157,30 @@
 
         <!-- Pagination -->
         <div class="mt-6 flex justify-center">
-            <nav class="flex items-center gap-2">
-                <button class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-                <button class="px-3 py-1 rounded-md bg-blue-500 text-white">1</button>
-                <button class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">2</button>
-                <button class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">3</button>
-                <button class="px-3 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
+            <nav class="flex items-center gap-2" id="pagination">
+                <!-- Pagination will be inserted by JavaScript -->
             </nav>
         </div>
     </div>
 
     <!-- JavaScript para interactividad -->
     <script>
+        // Funciones de navegación
+        function verFactura(numeroFactura) {
+            window.location.href = `/ver_factura/${numeroFactura}`;
+        }
+
+        function descargarFactura(numeroFactura) {
+            window.location.href = `/descargar_factura/${numeroFactura}`;
+        }
+
         function marcarComoPagada(numeroFactura) {
             if (confirm('¿Desea marcar esta factura como pagada?')) {
                 fetch(`/marcar_pagada/${numeroFactura}`, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -192,12 +199,113 @@
 
         // Función para aplicar filtros
         function aplicarFiltros() {
-            const busqueda = document.getElementById('busqueda').value;
-            const estado = document.getElementById('estado').value;
-            const fechaInicio = document.getElementById('fecha_inicio').value;
-            const fechaFin = document.getElementById('fecha_fin').value;
+            const busqueda = document.getElementById('search-input').value;
+            const estado = document.getElementById('status-filter').value;
+            const fechaInicio = document.getElementById('date-from').value;
+            const fechaFin = document.getElementById('date-to').value;
 
-            // Aquí iría la lógica para actualizar la tabla con los filtros
+            // Construir URL con parámetros de búsqueda
+            const params = new URLSearchParams({
+                query: busqueda,
+                estado: estado,
+                fecha_inicio: fechaInicio,
+                fecha_fin: fechaFin
+            });
+
+            // Realizar la búsqueda
+            fetch(`/api/buscar_facturas?${params}`)
+                .then(response => response.json())
+                .then(data => actualizarTablaFacturas(data))
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al buscar facturas');
+                });
+        }
+
+        // Función para actualizar la tabla de facturas
+        function actualizarTablaFacturas(facturas) {
+            const tbody = document.getElementById('facturas-table-body');
+            tbody.innerHTML = '';
+
+            facturas.forEach(factura => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-gray-200 hover:bg-gray-50';
+                
+                // Crear el contenido HTML de la fila
+                tr.innerHTML = `
+                    <td class="px-4 py-3">#${factura.numero}</td>
+                    <td class="px-4 py-3">${factura.cliente_nombre}</td>
+                    <td class="px-4 py-3">${factura.fecha}</td>
+                    <td class="px-4 py-3">$${factura.total.toFixed(2)}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold ${getEstadoClase(factura.estado)}">
+                            ${factura.estado.charAt(0).toUpperCase() + factura.estado.slice(1)}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <button onclick="verFactura('${factura.numero}')" class="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 transition-colors">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button onclick="descargarFactura('${factura.numero}')" class="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition-colors">
+                                <i class="fas fa-download"></i> Descargar
+                            </button>
+                            ${factura.estado !== 'anulada' && factura.estado !== 'pagada' ? `
+                                <button onclick="marcarComoPagada('${factura.numero}')" class="bg-yellow-500 text-white px-2 py-1 rounded-md hover:bg-yellow-600 transition-colors">
+                                    <i class="fas fa-check"></i> Marcar Pagada
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Función auxiliar para obtener las clases de estado
+        function getEstadoClase(estado) {
+            switch (estado) {
+                case 'pagada':
+                    return 'bg-green-100 text-green-800';
+                case 'anulada':
+                    return 'bg-red-100 text-red-800';
+                default:
+                    return 'bg-yellow-100 text-yellow-800';
+            }
+        }
+
+        // Cargar estadísticas iniciales
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total_facturado').textContent = `${data.total_ventas.toFixed(2)}`;
+                    document.getElementById('facturas_emitidas').textContent = data.total_facturas;
+                    document.getElementById('facturas_pendientes').textContent = data.facturas_pendientes;
+                });
+
+            // Aplicar filtros iniciales para cargar la tabla
+            aplicarFiltros();
+        });
+
+        // Event Listeners para búsqueda en tiempo real
+        document.getElementById('search-input').addEventListener('input', debounce(aplicarFiltros, 300));
+        document.getElementById('status-filter').addEventListener('change', aplicarFiltros);
+        document.getElementById('date-from').addEventListener('change', aplicarFiltros);
+        document.getElementById('date-to').addEventListener('change', aplicarFiltros);
+
+        // Función de debounce para evitar muchas llamadas seguidas
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         }
     </script>
 </body>

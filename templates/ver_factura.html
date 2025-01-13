@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Factura</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-lg mb-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Factura #{{ factura.numero }}</h1>
+            <div>
+                <a href="{{ url_for('facturas') }}" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-opacity-30">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-md shadow-md mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Detalles de la Factura</h2>
+                    <p><strong>Número:</strong> {{ factura.numero }}</p>
+                    <p><strong>Fecha:</strong> {{ factura.fecha.strftime('%d/%m/%Y') }}</p>
+                    <p><strong>Cliente:</strong> {{ factura.cotizacion.nombre }}</p>
+                    {% if factura.cotizacion.empresa %}
+                        <p><strong>Empresa:</strong> {{ factura.cotizacion.empresa }}</p>
+                    {% endif %}
+                    <p><strong>Ubicación:</strong> {{ factura.cotizacion.ubicacion }}</p>
+                    <p><strong>Teléfono:</strong> {{ factura.cotizacion.telefono }}</p>
+                    <p><strong>Estado:</strong> 
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold
+                            {% if factura.estado == 'pagada' %}
+                                bg-green-100 text-green-800
+                            {% elif factura.estado == 'anulada' %}
+                                bg-red-100 text-red-800
+                            {% else %}
+                                bg-yellow-100 text-yellow-800
+                            {% endif %}">
+                            {{ factura.estado|title }}
+                        </span>
+                    </p>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold mb-4">Totales</h2>
+                    <p><strong>Subtotal:</strong> ${{ factura.subtotal }}</p>
+                    <p><strong>I.T.B.M.S (7%):</strong> ${{ factura.itbms }}</p>
+                    <p><strong>Total:</strong> ${{ factura.total }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-md shadow-md">
+            <h2 class="text-xl font-bold mb-4">Items</h2>
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="bg-gray-100 text-gray-700 font-semibold">
+                        <th class="px-4 py-2 border-b">Descripción</th>
+                        <th class="px-4 py-2 border-b">P/U</th>
+                        <th class="px-4 py-2 border-b">Unidades</th>
+                        <th class="px-4 py-2 border-b">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in factura.cotizacion.get_items() %}
+                    <tr class="border-b">
+                        <td class="px-4 py-2">{{ item.descripcion }}</td>
+                        <td class="px-4 py-2">${{ item.precio_unitario }}</td>
+                        <td class="px-4 py-2">{{ item.unidades }}</td>
+                        <td class="px-4 py-2">${{ item.total }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="{{ url_for('descargar_factura', numero=factura.numero) }}" class="bg-blue-500 text-white px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-blue-600">
+                <i class="fas fa-download"></i> Descargar PDF
+            </a>
+        </div>
+    </div>
+</body>
+</html>

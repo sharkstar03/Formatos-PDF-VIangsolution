@@ -237,6 +237,20 @@
                 </tr>
                 {% endfor %}
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-right">Subtotal:</td>
+                    <td>${{ "%.2f"|format(subtotal) }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-right">ITBMS (7%):</td>
+                    <td>${{ "%.2f"|format(itbms) }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-right">Total:</td>
+                    <td>${{ "%.2f"|format(total) }}</td>
+                </tr>
+            </tfoot>
         </table>
 
         <div class="payment-and-totals">
