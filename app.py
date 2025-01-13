@@ -233,7 +233,8 @@ def buscar_facturas_api():
 def facturas():
     """Lista todas las facturas"""
     facturas = Factura.query.order_by(Factura.fecha.desc()).all()
-    return render_template('facturas.html', facturas=facturas)
+    total_ventas = sum(factura.total for factura in facturas)
+    return render_template('facturas.html', facturas=facturas, total_ventas=total_ventas)
 
 @app.route('/ver_factura/<numero>')
 @login_required

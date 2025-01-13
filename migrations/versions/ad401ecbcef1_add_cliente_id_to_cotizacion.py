@@ -31,12 +31,8 @@ def upgrade():
 
     with op.batch_alter_table('factura') as batch_op:
         batch_op.alter_column('cotizacion_id', existing_type=sa.INTEGER(), nullable=True)
-        conn = op.get_bind()
-        inspector = sa.inspect(conn)
-        constraints = [c['name'] for c in inspector.get_foreign_keys('factura')]
-        if 'constraint_name' in constraints:
-            batch_op.drop_constraint('constraint_name', type_='foreignkey')  # Provide the constraint name
         if 'usuario_id' in columns:
+            batch_op.drop_constraint('constraint_name', type_='foreignkey')  # Provide the constraint name
             batch_op.drop_column('usuario_id')
         if 'pdf_path' in columns:
             batch_op.drop_column('pdf_path')
