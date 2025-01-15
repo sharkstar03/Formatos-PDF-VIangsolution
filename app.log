@@ -1,0 +1,2 @@
+2025-01-13 18:45:24,064 ERROR Error al inicializar la base de datos: Invalid argument(s) 'pool_size','pool_timeout','max_overflow' sent to create_engine(), using configuration SQLiteDialect_pysqlite/NullPool/Engine.  Please check that the keyword arguments are appropriate for this combination of components.
+2025-01-15 14:54:14,604 ERROR Error: Directory migrations already exists and is not empty

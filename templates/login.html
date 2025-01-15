@@ -88,6 +88,15 @@
                 </button>
             </div>
         </form>
+
+        <!-- Notificaciones -->
+        <div class="notifications mt-6">
+            {% for notificacion in notificaciones %}
+                <div class="alert alert-info" role="alert">
+                    <strong>{{ notificacion.titulo }}</strong> - {{ notificacion.mensaje }}
+                </div>
+            {% endfor %}
+        </div>
     </div>
 </body>
 </html>

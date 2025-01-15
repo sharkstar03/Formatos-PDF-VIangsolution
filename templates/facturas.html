@@ -3,126 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facturas - Sistema de Cotizaciones</title>
+    <title>Facturas</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-12 rounded-lg mb-8 text-center">
-            <a href="/" class="inline-block bg-white bg-opacity-20 text-white px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-opacity-30 mb-4">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-            <h2 class="text-2xl font-bold">Gestión de Facturas</h2>
-        </div>
-
-        <!-- Search & Filter Section -->
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <div class="flex flex-wrap gap-4">
-                <!-- Búsqueda -->
-                <div class="flex-1 min-w-[200px]">
-                    <div class="relative">
-                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                        <input 
-                            type="text" 
-                            id="search-input"
-                            placeholder="Buscar por número de factura o cliente..." 
-                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                    </div>
-                </div>
-
-                <!-- Filtros -->
-                <select id="status-filter" class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">Todos los estados</option>
-                    <option value="pendiente">Pendiente</option>
-                    <option value="pagada">Pagada</option>
-                    <option value="anulada">Anulada</option>
-                </select>
-
-                <!-- Rango de fechas -->
-                <input 
-                    type="date" 
-                    id="date-from"
-                    class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                <input 
-                    type="date"
-                    id="date-to"
-                    class="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-
-                <!-- Botón de filtrar -->
-                <button onclick="aplicarFiltros()" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 transition-colors">
-                    <i class="fas fa-filter mr-2"></i>Filtrar
-                </button>
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4 rounded-lg mb-6 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Facturas</h1>
+            <div>
+                <a href="{{ url_for('index') }}" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-opacity-30">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
             </div>
         </div>
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <!-- Total Facturado -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="flex items-center">
-                    <div class="p-3 bg-blue-100 rounded-lg">
-                        <i class="fas fa-dollar-sign text-blue-500 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-500">Total Facturado</p>
-                        <h3 class="text-xl font-bold text-gray-800" id="total_facturado">${{ "%.2f"|format(total_ventas) }}</h3>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Facturas Emitidas -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="flex items-center">
-                    <div class="p-3 bg-green-100 rounded-lg">
-                        <i class="fas fa-file-invoice text-green-500 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-500">Facturas Emitidas</p>
-                        <h3 class="text-xl font-bold text-gray-800" id="facturas_emitidas">0</h3>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Facturas Pendientes -->
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="flex items-center">
-                    <div class="p-3 bg-yellow-100 rounded-lg">
-                        <i class="fas fa-clock text-yellow-500 text-xl"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm text-gray-500">Facturas Pendientes</p>
-                        <h3 class="text-xl font-bold text-gray-800" id="facturas_pendientes">0</h3>
-                    </div>
-                </div>
-            </div>
+        <div class="bg-white p-6 rounded-md shadow-md mb-6">
+            <h2 class="text-xl font-bold mb-4">Estadísticas</h2>
+            <p><strong>Total Ventas:</strong> ${{ total_ventas }}</p>
+            <p><strong>Facturas Pendientes:</strong> {{ facturas_pendientes }}</p>
         </div>
 
-        <!-- Facturas Table -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="bg-white p-6 rounded-md shadow-md">
+            <h2 class="text-xl font-bold mb-4">Lista de Facturas</h2>
             <table class="w-full border-collapse">
                 <thead>
                     <tr class="bg-gray-100 text-gray-700 font-semibold">
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">N° Factura</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Cliente</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Fecha</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Total</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Estado</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Acciones</th>
+                        <th class="px-4 py-2 border-b">Número</th>
+                        <th class="px-4 py-2 border-b">Cliente</th>
+                        <th class="px-4 py-2 border-b">Fecha</th>
+                        <th class="px-4 py-2 border-b">Total</th>
+                        <th class="px-4 py-2 border-b">Estado</th>
+                        <th class="px-4 py-2 border-b">Acciones</th>
                     </tr>
                 </thead>
-                <tbody id="facturas-table-body">
+                <tbody>
                     {% for factura in facturas %}
-                    <tr class="border-b border-gray-200 hover:bg-gray-50">
-                        <td class="px-4 py-3">#{{ factura.numero }}</td>
-                        <td class="px-4 py-3">{{ factura.cotizacion.nombre }}</td>
-                        <td class="px-4 py-3">{{ factura.fecha.strftime('%d/%m/%Y') }}</td>
-                        <td class="px-4 py-3">${{ "%.2f"|format(factura.total) }}</td>
-                        <td class="px-4 py-3">
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-2">{{ factura.numero }}</td>
+                        <td class="px-4 py-2">{{ factura.cotizacion.nombre if factura.cotizacion else 'Sin cliente' }}</td>
+                        <td class="px-4 py-2">{{ factura.fecha.strftime('%d/%m/%Y') }}</td>
+                        <td class="px-4 py-2">${{ "%.2f"|format(factura.total) }}</td>
+                        <td class="px-4 py-2">
                             <span class="px-2 py-1 rounded-full text-xs font-semibold
                                 {% if factura.estado == 'pagada' %}
                                     bg-green-100 text-green-800
@@ -134,179 +56,56 @@
                                 {{ factura.estado|title }}
                             </span>
                         </td>
-                        <td class="px-4 py-3">
-                            <div class="flex items-center gap-2">
-                                <button onclick="verFactura('{{ factura.numero }}')" class="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 transition-colors">
-                                    <i class="fas fa-eye"></i> Ver
-                                </button>
-                                <button onclick="descargarFactura('{{ factura.numero }}')" class="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition-colors">
-                                    <i class="fas fa-download"></i> Descargar
-                                </button>
-                                {% if factura.estado != 'anulada' and factura.estado != 'pagada' %}
-                                <button onclick="marcarComoPagada('{{ factura.numero }}')" class="bg-yellow-500 text-white px-2 py-1 rounded-md hover:bg-yellow-600 transition-colors">
-                                    <i class="fas fa-check"></i> Marcar Pagada
+                        <td class="px-4 py-2">
+                            <div class="flex space-x-2">
+                                <a href="{{ url_for('ver_factura', numero=factura.numero) }}" 
+                                   class="text-blue-500 hover:text-blue-700">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ url_for('descargar_factura', numero=factura.numero) }}" 
+                                   class="text-green-500 hover:text-green-700">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% if factura.estado == 'pendiente' %}
+                                <button onclick="marcarComoPagada('{{ factura.numero }}')"
+                                        class="text-green-500 hover:text-green-700">
+                                    <i class="fas fa-check-circle"></i>
                                 </button>
                                 {% endif %}
                             </div>
                         </td>
                     </tr>
                     {% endfor %}
-                </tbody>
+                </tbody>                
             </table>
         </div>
-
-        <!-- Pagination -->
-        <div class="mt-6 flex justify-center">
-            <nav class="flex items-center gap-2" id="pagination">
-                <!-- Pagination will be inserted by JavaScript -->
-            </nav>
-        </div>
     </div>
-
-    <!-- JavaScript para interactividad -->
-    <script>
-        // Funciones de navegación
-        function verFactura(numeroFactura) {
-            window.location.href = `/ver_factura/${numeroFactura}`;
+<script>
+    function marcarComoPagada(numeroFactura) {
+        if (!confirm('¿Estás seguro de marcar esta factura como pagada?')) {
+            return;
         }
-
-        function descargarFactura(numeroFactura) {
-            window.location.href = `/descargar_factura/${numeroFactura}`;
-        }
-
-        function marcarComoPagada(numeroFactura) {
-            if (confirm('¿Desea marcar esta factura como pagada?')) {
-                fetch(`/marcar_pagada/${numeroFactura}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.location.reload();
-                    } else {
-                        alert('Error al actualizar la factura');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al procesar la solicitud');
-                });
+    
+        fetch(`/marcar_pagada/${numeroFactura}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Recargar la página para mostrar los cambios
+                window.location.reload();
+            } else {
+                alert(data.error || 'Error al marcar la factura como pagada');
             }
-        }
-
-        // Función para aplicar filtros
-        function aplicarFiltros() {
-            const busqueda = document.getElementById('search-input').value;
-            const estado = document.getElementById('status-filter').value;
-            const fechaInicio = document.getElementById('date-from').value;
-            const fechaFin = document.getElementById('date-to').value;
-
-            // Construir URL con parámetros de búsqueda
-            const params = new URLSearchParams({
-                query: busqueda,
-                estado: estado,
-                fecha_inicio: fechaInicio,
-                fecha_fin: fechaFin
-            });
-
-            // Realizar la búsqueda
-            fetch(`/api/buscar_facturas?${params}`)
-                .then(response => response.json())
-                .then(data => actualizarTablaFacturas(data))
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error al buscar facturas');
-                });
-        }
-
-        // Función para actualizar la tabla de facturas
-        function actualizarTablaFacturas(facturas) {
-            const tbody = document.getElementById('facturas-table-body');
-            tbody.innerHTML = '';
-
-            facturas.forEach(factura => {
-                const tr = document.createElement('tr');
-                tr.className = 'border-b border-gray-200 hover:bg-gray-50';
-                
-                // Crear el contenido HTML de la fila
-                tr.innerHTML = `
-                    <td class="px-4 py-3">#${factura.numero}</td>
-                    <td class="px-4 py-3">${factura.cliente_nombre}</td>
-                    <td class="px-4 py-3">${factura.fecha}</td>
-                    <td class="px-4 py-3">$${factura.total.toFixed(2)}</td>
-                    <td class="px-4 py-3">
-                        <span class="px-2 py-1 rounded-full text-xs font-semibold ${getEstadoClase(factura.estado)}">
-                            ${factura.estado.charAt(0).toUpperCase() + factura.estado.slice(1)}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="flex items-center gap-2">
-                            <button onclick="verFactura('${factura.numero}')" class="bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600 transition-colors">
-                                <i class="fas fa-eye"></i> Ver
-                            </button>
-                            <button onclick="descargarFactura('${factura.numero}')" class="bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600 transition-colors">
-                                <i class="fas fa-download"></i> Descargar
-                            </button>
-                            ${factura.estado !== 'anulada' && factura.estado !== 'pagada' ? `
-                                <button onclick="marcarComoPagada('${factura.numero}')" class="bg-yellow-500 text-white px-2 py-1 rounded-md hover:bg-yellow-600 transition-colors">
-                                    <i class="fas fa-check"></i> Marcar Pagada
-                                </button>
-                            ` : ''}
-                        </div>
-                    </td>
-                `;
-                
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Función auxiliar para obtener las clases de estado
-        function getEstadoClase(estado) {
-            switch (estado) {
-                case 'pagada':
-                    return 'bg-green-100 text-green-800';
-                case 'anulada':
-                    return 'bg-red-100 text-red-800';
-                default:
-                    return 'bg-yellow-100 text-yellow-800';
-            }
-        }
-
-        // Cargar estadísticas iniciales
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/api/stats')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('total_facturado').textContent = `${data.total_ventas.toFixed(2)}`;
-                    document.getElementById('facturas_emitidas').textContent = data.total_facturas;
-                    document.getElementById('facturas_pendientes').textContent = data.facturas_pendientes;
-                });
-
-            // Aplicar filtros iniciales para cargar la tabla
-            aplicarFiltros();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al marcar la factura como pagada');
         });
-
-        // Event Listeners para búsqueda en tiempo real
-        document.getElementById('search-input').addEventListener('input', debounce(aplicarFiltros, 300));
-        document.getElementById('status-filter').addEventListener('change', aplicarFiltros);
-        document.getElementById('date-from').addEventListener('change', aplicarFiltros);
-        document.getElementById('date-to').addEventListener('change', aplicarFiltros);
-
-        // Función de debounce para evitar muchas llamadas seguidas
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
+    }
     </script>
 </body>
 </html>

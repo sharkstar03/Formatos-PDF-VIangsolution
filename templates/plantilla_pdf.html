@@ -18,40 +18,40 @@
             position: relative;
             font-size: 11pt;
         }
-
+    
         .container {
             max-width: 800px;
             margin: auto;
             position: relative;
         }
-
+    
         .header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 15px;
         }
-
+    
         .header-left {
             width: 250px;
         }
-
+    
         .header-right {
             text-align: right;
         }
-
+    
         .header-logo {
             width: 280px;
             height: auto;
         }
-
+    
         .header-title {
             font-size: 35px;
             letter-spacing: 3px;
             margin: 0;
             text-align: right;
         }
-
+    
         .watermark {
             position: absolute;
             top: 50%;
@@ -61,16 +61,17 @@
             width: 70%;
             z-index: -1;
         }
-
+    
         .client-section {
             margin-top: 15px;
+            line-height: 1.5;
         }
-
+    
         .contact-info p, .client-section p {
             margin: 1px 0;
             font-size: 11pt;
         }
-
+    
         .validity-text {
             color: red;
             text-align: center;
@@ -78,74 +79,76 @@
             font-size: 11pt;
             font-weight: bold;
         }
-
+    
+        /* Estilos actualizados de la tabla */
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 10px 0;
         }
-
+    
         th {
             padding: 8px;
             text-align: left;
-            background-color: white;
+            background-color: transparent;
             font-weight: bold;
             border: none;
         }
-
+    
         td {
             padding: 8px;
             text-align: left;
             border: none;
+            background-color: transparent;
         }
-
+    
         thead tr {
             border-bottom: 2px solid black;
         }
-
+    
         tbody tr:last-child {
             border-bottom: 2px solid black;
         }
-
+    
         .payment-and-totals {
             display: flex;
             justify-content: space-between;
             margin: 20px 0;
         }
-
+    
         .payment-methods {
             text-align: left;
             flex: 1;
             font-size: 11pt;
         }
-
+    
         .payment-methods p {
             margin: 1px 0;
         }
-
+    
         .totals {
             text-align: right;
             flex: 1;
         }
-
+    
         .totals p {
             margin: 1px 0;
             font-size: 11pt;
         }
-
+    
         .yappy-logo {
             width: 25px;
             height: auto;
             vertical-align: middle;
         }
-
+    
         .signatures {
             display: flex;
             justify-content: space-between;
             margin-top: 100px;
             padding: 0 30px;
         }
-
+    
         .signature-line {
             width: 180px;
             border-top: 1px solid black;
@@ -153,42 +156,48 @@
             padding-top: 5px;
             font-size: 11pt;
         }
-
+    
         .terms {
             margin-top: 15px;
             font-size: 11pt;
         }
-
+    
         .terms ul {
             list-style-type: none;
             padding-left: 0;
             margin: 5px 0;
         }
-
+    
         .terms li {
             margin-bottom: 2px;
         }
-
+    
         .quotation-number {
             color: blue;
             font-weight: bold;
         }
-
+    
         .client-info-label {
             font-weight: bold;
             display: inline-block;
             width: 100px;
             margin-right: 5px;
+            vertical-align: top;
+        }
+    
+        .client-info-value {
+            display: inline-block;
+            vertical-align: top;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <img src="{{ url_for('static', filename='watermark.png', _external=True) }}" alt="Watermark" class="watermark">
+        <img src="file:///{{ watermark_path }}" alt="Watermark" class="watermark">
         
         <div class="header">
             <div class="header-left">
-                <img src="{{ url_for('static', filename='logo.png', _external=True) }}" alt="VIANG SOLUTION & SERVICE" class="header-logo">
+                <img src="file:///{{ logo_path }}" alt="VIANG SOLUTION & SERVICE" class="header-logo">
             </div>
             <div class="header-right">
                 <h1 class="header-title">C O T I Z A C I Ó N</h1>
@@ -208,10 +217,13 @@
 
         <div class="client-section">
             <p><strong>PARA:</strong></p>
-            <p><span class="client-info-label">Nombre:</span> {{ nombre }}</p>
-            <p><span class="client-info-label">Empresa:</span> {{ empresa }}</p>
-            <p><span class="client-info-label">Ubicación:</span> {{ ubicacion }}</p>
-            <p><span class="client-info-label">Telefono:</span> {{ telefono }}</p>
+            <p><span class="client-info-label">Nombre:</span> <span class="client-info-value">{{ nombre }}</span></p>
+            <p><span class="client-info-label">Empresa:</span> <span class="client-info-value">{{ empresa }}</span></p>
+            <p><span class="client-info-label">Ubicación:</span> <span class="client-info-value">{{ ubicacion }}</span></p>
+            <p><span class="client-info-label">Teléfono:</span> <span class="client-info-value">{{ telefono }}</span></p>
+            {% if ruc %}
+            <p><span class="client-info-label">RUC:</span> <span class="client-info-value">{{ ruc }}</span> <span class="client-info-label">DV:</span> <span class="client-info-value">{{ dv }}</span></p>
+            {% endif %}
         </div>
 
         <div class="validity-text">
@@ -237,20 +249,6 @@
                 </tr>
                 {% endfor %}
             </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="3" class="text-right">Subtotal:</td>
-                    <td>${{ "%.2f"|format(subtotal) }}</td>
-                </tr>
-                <tr>
-                    <td colspan="3" class="text-right">ITBMS (7%):</td>
-                    <td>${{ "%.2f"|format(itbms) }}</td>
-                </tr>
-                <tr>
-                    <td colspan="3" class="text-right">Total:</td>
-                    <td>${{ "%.2f"|format(total) }}</td>
-                </tr>
-            </tfoot>
         </table>
 
         <div class="payment-and-totals">
@@ -260,11 +258,13 @@
                 <p>Nombre: Vionel Angulo</p>
                 <p>Cuenta N°: 04-72-98-21-23-33-0</p>
                 <p>Tipo De Cuenta: AHORRO</p>
-                <p><img src="{{ url_for('static', filename='yappy.png', _external=True) }}" alt="Yappy" class="yappy-logo"> 6734-0816</p>
+                <p><img src="file:///{{ yappy_path }}" alt="Yappy" class="yappy-logo"> 6734-0816</p>
             </div>
             <div class="totals">
                 <p>SUBTOTAL: ${{ "%.2f"|format(subtotal) }}</p>
+                {% if itbms %}
                 <p>I.T.B.M.S (7%): ${{ "%.2f"|format(itbms) }}</p>
+                {% endif %}
                 <p>TOTAL: ${{ "%.2f"|format(total) }}</p>
             </div>
         </div>

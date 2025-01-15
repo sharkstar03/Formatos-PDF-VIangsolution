@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dark-mode {
+            background-color: #1a202c;
+            color: #cbd5e0;
+        }
+        .dark-mode .bg-white {
+            background-color: #2d3748;
+        }
+        .dark-mode .text-gray-700 {
+            color: #cbd5e0;
+        }
+        .dark-mode .border-gray-300 {
+            border-color: #4a5568;
+        }
+        .dark-mode .bg-gray-50 {
+            background-color: #2d3748;
+        }
+        .dark-mode .bg-gray-200 {
+            background-color: #4a5568;
+        }
+        .dark-mode .text-gray-600 {
+            color: #a0aec0;
+        }
+        .dark-mode .text-gray-900 {
+            color: #e2e8f0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="fixed top-0 right-0 p-4">
+        <button id="toggle-dark-mode" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-gray-300">
+            <i class="fas fa-moon"></i> Modo Oscuro
+        </button>
+    </div>
+    {% block content %}{% endblock %}
+    <script>
+        const toggleDarkMode = document.getElementById('toggle-dark-mode');
+        toggleDarkMode.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                toggleDarkMode.innerHTML = '<i class="fas fa-sun"></i> Modo Claro';
+            } else {
+                toggleDarkMode.innerHTML = '<i class="fas fa-moon"></i> Modo Oscuro';
+            }
+        });
+    </script>
+</body>
+</html>

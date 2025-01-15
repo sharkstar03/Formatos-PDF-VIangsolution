@@ -7,74 +7,136 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos personalizados para radio buttons */
         input[type="radio"]:checked + span {
             background-color: #3B82F6;
             color: white;
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
-        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-12 rounded-lg mb-8 text-center">
-            <a href="{{ url_for('select_type') }}" class="inline-block bg-white bg-opacity-20 text-white px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-opacity-30 mb-4">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-            <h2 class="text-2xl font-bold">Búsqueda de Cotizaciones</h2>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Sidebar fijo -->
+    <div class="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200">
+        <!-- Logo -->
+        <div class="flex items-center h-16 px-6 border-b border-gray-200">
+            <img class="h-8 w-auto" src="{{ url_for('static', filename='logo.png') }}" alt="Logo">
         </div>
-
-        <div class="bg-white p-8 rounded-lg shadow-md mb-8">
-            <div class="relative mb-4">
-                <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
-                <input 
-                    id="searchInput" 
-                    type="text" 
-                    class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-300 ease-in-out focus:outline-none focus:border-blue-500" 
-                    placeholder="Buscar por nombre de cliente o número de cotización..."
-                >
+        
+        <!-- Navegación -->
+        <nav class="p-4 space-y-6">
+            <!-- Menú Principal -->
+            <div>
+                <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Menú
+                </h3>
+                <div class="mt-3 space-y-1">
+                    <a href="{{ url_for('index') }}" 
+                       class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-indigo-600">
+                        <i class="fas fa-chart-line w-5 h-5 mr-3"></i>
+                        Dashboard
+                    </a>
+                    <a href="{{ url_for('select_type') }}" 
+                       class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-indigo-600">
+                        <i class="fas fa-file-invoice w-5 h-5 mr-3"></i>
+                        Cotizaciones
+                    </a>
+                    <a href="{{ url_for('facturas') }}" 
+                       class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-indigo-600">
+                        <i class="fas fa-file-invoice-dollar w-5 h-5 mr-3"></i>
+                        Facturas
+                    </a>
+                </div>
             </div>
 
-            <div class="flex flex-wrap gap-4 mb-4">
-                <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200">
-                    <input type="radio" name="tipo" value="todos" class="hidden" checked>
-                    <span class="flex items-center gap-2 px-2 py-1 rounded">
-                        <i class="fas fa-list"></i>
-                        Todos
-                    </span>
-                </label>
-                <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200">
-                    <input type="radio" name="tipo" value="empresa" class="hidden">
-                    <span class="flex items-center gap-2 px-2 py-1 rounded">
-                        <i class="fas fa-building"></i>
-                        Empresariales
-                    </span>
-                </label>
-                <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200">
-                    <input type="radio" name="tipo" value="natural" class="hidden">
-                    <span class="flex items-center gap-2 px-2 py-1 rounded">
-                        <i class="fas fa-user"></i>
-                        Personales
-                    </span>
-                </label>
+            <!-- Herramientas -->
+            <div>
+                <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Herramientas
+                </h3>
+                <div class="mt-3 space-y-1">
+                    <a href="#" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-indigo-600">
+                        <i class="fas fa-cog w-5 h-5 mr-3"></i>
+                        Configuración
+                    </a>
+                    <a href="#" class="group flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-indigo-600">
+                        <i class="fas fa-question-circle w-5 h-5 mr-3"></i>
+                        Ayuda
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Contenido Principal -->
+    <div class="ml-64 min-h-full">
+        <!-- Header -->
+        <div class="bg-white border-b border-gray-200">
+            <div class="flex justify-between items-center h-16 px-8">
+                <div>
+                    <h1 class="text-2xl font-semibold text-gray-900">Búsqueda de Cotizaciones</h1>
+                </div>
+                <a href="{{ url_for('select_type') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md transition-all duration-300 ease-in-out hover:bg-gray-300">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <table class="w-full border-collapse">
-                <thead>
-                    <tr class="bg-gray-100 text-gray-700 font-semibold">
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">N° Cotización</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Fecha</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Cliente</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Tipo</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Total</th>
-                        <th class="px-4 py-3 text-left border-b-2 border-gray-200">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="resultados">
-                    <!-- Los resultados se cargarán aquí dinámicamente -->
-                </tbody>
-            </table>
+        <!-- Formulario de Búsqueda -->
+        <div class="p-8">
+            <div class="bg-white p-8 rounded-lg shadow-md mb-8">
+                <div class="relative mb-4">
+                    <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                    <input 
+                        id="searchInput" 
+                        type="text" 
+                        class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-lg text-base transition-all duration-300 ease-in-out focus:outline-none focus:border-blue-500" 
+                        placeholder="Buscar por nombre de cliente o número de cotización..."
+                    >
+                </div>
+
+                <div class="flex flex-wrap gap-4 mb-4">
+                    <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200">
+                        <input type="radio" name="tipo" value="todos" class="hidden" checked>
+                        <span class="flex items-center gap-2 px-2 py-1 rounded">
+                            <i class="fas fa-list"></i>
+                            Todos
+                        </span>
+                    </label>
+                    <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200">
+                        <input type="radio" name="tipo" value="empresa" class="hidden">
+                        <span class="flex items-center gap-2 px-2 py-1 rounded">
+                            <i class="fas fa-building"></i>
+                            Empresariales
+                        </span>
+                    </label>
+                    <label class="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-md cursor-pointer transition-all duration-300 ease-in-out hover:bg-gray-200">
+                        <input type="radio" name="tipo" value="natural" class="hidden">
+                        <span class="flex items-center gap-2 px-2 py-1 rounded">
+                            <i class="fas fa-user"></i>
+                            Personales
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Resultados de Búsqueda -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700 font-semibold">
+                            <th class="px-4 py-3 text-left border-b-2 border-gray-200">N° Cotización</th>
+                            <th class="px-4 py-3 text-left border-b-2 border-gray-200">Fecha</th>
+                            <th class="px-4 py-3 text-left border-b-2 border-gray-200">Cliente</th>
+                            <th class="px-4 py-3 text-left border-b-2 border-gray-200">Tipo</th>
+                            <th class="px-4 py-3 text-left border-b-2 border-gray-200">Total</th>
+                            <th class="px-4 py-3 text-left border-b-2 border-gray-200">Estado</th>
+                            <th class="px-4 py-3 text-left border-b-2 border-gray-200">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultados">
+                        <!-- Los resultados se cargarán aquí dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -88,7 +150,7 @@
             const tbody = document.getElementById('resultados');
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center py-4">
+                    <td colspan="7" class="text-center py-4">
                         <div class="flex justify-center items-center">
                             <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
                             <span class="ml-2">Cargando...</span>
@@ -105,7 +167,7 @@
                     if (!data || data.length === 0) {
                         tbody.innerHTML = `
                             <tr>
-                                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                                     <i class="fas fa-search text-2xl mb-2"></i>
                                     <p>No se encontraron resultados</p>
                                 </td>
@@ -128,28 +190,39 @@
                             </td>
                             <td class="px-4 py-3 border-b border-gray-200">${cotizacion.total || '$0.00'}</td>
                             <td class="px-4 py-3 border-b border-gray-200">
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold ${
+                                    cotizacion.estado === 'aprobada' ? 'bg-green-100 text-green-800' :
+                                    cotizacion.estado === 'rechazada' ? 'bg-red-100 text-red-800' :
+                                    'bg-yellow-100 text-yellow-800'
+                                }">
+                                    ${cotizacion.estado || 'Pendiente'}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 border-b border-gray-200">
                                 <div class="flex items-center gap-2">
                                     <a href="/ver/${cotizacion.numero}" class="bg-blue-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-blue-600">
-                                        <i class="fas fa-eye"></i> Ver
+                                        <i class="fas fa-eye"></i>
                                     </a>
                                     <a href="/reimprimir/${cotizacion.numero}" class="bg-green-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-green-600">
-                                        <i class="fas fa-download"></i> Descargar
+                                        <i class="fas fa-download"></i>
                                     </a>
-                                    <form action="/eliminar/${cotizacion.numero}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar esta cotización?')">
-                                        <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-red-600">
-                                            <i class="fas fa-trash"></i> Eliminar
+                                    <form action="/eliminar/${cotizacion.numero}" method="POST" class="inline">
+                                        <button type="submit" onclick="return confirm('¿Estás seguro de eliminar esta cotización?')" class="bg-red-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-red-600">
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
-                                    <form action="/aprobar_cotizacion/${cotizacion.numero}" method="POST" onsubmit="return confirm('¿Estás seguro de aprobar esta cotización?')">
-                                        <button type="submit" class="bg-green-500 text-white px-2 py-1 rounded-full transition-all duration-300 ease-in-out hover:bg-green-600">
+                                    ${cotizacion.estado === 'pendiente' ? `
+                                        ${cotizacion.estado === 'pendiente' ? `
+                                        <button onclick="aprobarCotizacion('${cotizacion.numero}')" class="bg-green-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-green-600">
                                             <i class="fas fa-check"></i>
                                         </button>
-                                    </form>
-                                    <form action="/rechazar_cotizacion/${cotizacion.numero}" method="POST" onsubmit="return confirm('¿Estás seguro de rechazar esta cotización?')">
-                                        <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded-full transition-all duration-300 ease-in-out hover:bg-red-600">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </form>
+                                        ` : ''}
+                                        <form action="/rechazar_cotizacion/${cotizacion.numero}" method="POST" class="inline">
+                                            <button type="submit" onclick="return confirm('¿Estás seguro de rechazar esta cotización?')" class="bg-red-500 text-white px-2 py-1 rounded-md transition-all duration-300 ease-in-out hover:bg-red-600">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                    ` : ''}
                                 </div>
                             </td>
                         `;
@@ -160,7 +233,7 @@
                     console.error('Error en la búsqueda:', error);
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="text-center text-red-500 p-4">
+                            <td colspan="7" class="text-center text-red-500 p-4">
                                 Error al cargar los resultados: ${error.message}
                             </td>
                         </tr>
@@ -172,6 +245,9 @@
             const searchInput = document.getElementById('searchInput');
             const radioButtons = document.querySelectorAll('input[name="tipo"]');
     
+            // Cargar todas las cotizaciones al inicio
+            realizarBusqueda('');
+    
             searchInput.addEventListener('input', (e) => {
                 realizarBusqueda(e.target.value);
             });
@@ -182,6 +258,34 @@
                 });
             });
         });
+        
+        function aprobarCotizacion(numeroCotizacion) {
+    if (!confirm('¿Estás seguro de aprobar esta cotización?')) {
+        return;
+    }
+
+    fetch(`/aprobar_cotizacion/${numeroCotizacion}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(err => Promise.reject(err));
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert('Cotización aprobada exitosamente');
+        window.location.href = '/facturas';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.error || 'Error al aprobar la cotización');
+    });
+}
     </script>
 </body>
 </html>
